@@ -72,8 +72,11 @@ ylabel('Amplitude');
 legend show;
 
 
+%% 2- 3 
+%--------- PARAMETERS ---------
+SNR_dB = 20;          
+Es = 2;               
 
-% Create 4-QAM symbols: ±1 ±1j
 %{
     r(1) is for N=200 b=0.15
     r(2) is for N=200 b=0.3
@@ -81,58 +84,71 @@ legend show;
 %}
 r = cell(3, 1);
 s = cell(3, 1);
+noise_power =  Es / (10^(SNR_dB/10));
 for i = 1:length(h_all)
- s{i} = randsrc(1, length(h_all{i}), [1 -1]) + 1i * randsrc(1, length(h_all{i}), [1 -1]);
- n = sqrt(noise_power/2) * (randn(1, length(h_all{i})) + 1i * randn(1, length(h_all{i})));
- r{i} = h_all{i} .* s{i} + n;
+    % Δημιουργία QAM συμβόλων
+    s{i} = randsrc(1, length(h_all{i}), [1 -1]) + 1i * randsrc(1, length(h_all{i}), [1 -1]);
+    % Λευκό Gaussian θόρυβο
+    n = sqrt(noise_power/2) * (randn(1, length(h_all{i})) + 1i * randn(1, length(h_all{i})));
+    % Έξοδος καναλιού: r[k] = h[k] * s[k] + n[k]
+    r{i} = h_all{i} .* s{i} + n;
 end
-
-SNRdB = zeros(3,1);
 
 for i = 1:length(r)
-
-    snr_num = mean(abs(h_all{i} .* s{i}).^2); % E{|h[k]s[k]|^2}
-    snr_den = mean(abs(n).^2);          % E{|n[k]|^2}
-    SNRdB(i) = 10*log10(snr_num/snr_den);
+    figure;
+    plot(real(r{i}), 'b', 'DisplayName', 'Real part');
+    hold on;
+    plot(imag(r{i}), 'r', 'DisplayName', 'Imag part');
+    hold off;
+    grid on;
+    if i <= 2
+        title(['Received Signal r for N=200, b=', num2str(b_values(i))]);
+    else
+        title(['Received Signal r for N=1000, b=0.99']);
+    end
+    xlabel('Sample Index k');
+    ylabel('Amplitude');
+    legend show;
 end
 
-disp('Average SNRs for each channel:');
-disp(SNRdB);
-
+%% 5
 qam_syms = [1+1j, 1-1j, -1+1j, -1-1j];
-%%4
+%------- ML Detection--------
 ML_hat = cell(3,1); % Εκτιμήσεις για κάθε περίπτωση καναλιού
 for i = 1:length(r)
     r_curr = r{i};
     h_curr = h_all{i};
-    ML_hat{i} = zeros(1, length(r_curr));
+    ML_detected = zeros(1, length(r_curr));
     for k = 1:length(r_curr)
         dists = abs(r_curr(k) - h_curr(k) * qam_syms);
         [~, idx] = min(dists);
-        ML_hat{i}(k) = qam_syms(idx);
+        ML_detected(k) = qam_syms(idx);
     end
+    ML_hat{i} = ML_detected;
 end
-%%5
+
+%% 5 
+threshold = 1/sqrt(SNR_dB);
 for idx = 1:3
-    % Find where the symbol decision is wrong
     s_true = s{idx};
     s_est = ML_hat{idx};
-    errors = (s_true ~= s_est); % Logical array: 1 where decoding error
+    errors = (s_true ~= s_est);    % 1 εκεί όπου υπάρχει σφάλμα
+    h_amp = abs(h_all{idx});       % Πλάτος καναλιού |h[k]|
     
-    h_amp = abs(h_all{idx});    % Channel amplitude
     figure;
     subplot(2,1,1);
-    plot(h_amp, 'b', 'DisplayName', '|h[k]|');
+    semilogy(h_amp, 'b', 'DisplayName', '|h[k]|'); % ημιλογαριθμική κλίμακα
     hold on;
     stem(find(errors), h_amp(errors), 'r', 'filled', 'DisplayName', 'Error positions');
+    yline(threshold, 'k--', 'LineWidth', 1.5, 'DisplayName', 'threshold');
     xlabel('Sample Index');
     ylabel('|h[k]|');
-    title(['Channel amplitude and error positions, channel ', num2str(idx)]);
+    title(['Channel amplitude (semilogy) and error positions, channel ', num2str(idx)]);
     legend('show');
     hold off;
-
+    
     subplot(2,1,2);
-    stem(errors, 'r', 'DisplayName', 'Decoding error (1=error)');
+    stem(abs(errors), 'r', 'DisplayName', 'Decoding error (1=error)');
     xlabel('Sample Index');
     ylabel('Error');
     title(['Decoded symbol errors, channel ', num2str(idx)]);
@@ -277,6 +293,7 @@ legend('AWGN Sim', 'AWGN Theory', ...
        'Location', 'southwest');
 hold off;
 
+%% 9
 % --- PARAMETERS ---
 K = 10000;          % Number of packets/blocks
 N = 100;            % Number of symbols per packet/block
