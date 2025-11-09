@@ -74,14 +74,15 @@ legend show;
 
 %% 2- 3 
 %--------- PARAMETERS ---------
-SNR_dB = 20;          
-Es = 2;               
+             
 
 %{
     r(1) is for N=200 b=0.15
     r(2) is for N=200 b=0.3
     r(3) is for N=1000 b=0.99
 %}
+SNR_dB = 20;          
+Es = 2;  
 r = cell(3, 1);
 s = cell(3, 1);
 noise_power =  Es / (10^(SNR_dB/10));
@@ -111,7 +112,8 @@ for i = 1:length(r)
     legend show;
 end
 
-%% 5
+%% 4
+
 qam_syms = [1+1j, 1-1j, -1+1j, -1-1j];
 %------- ML Detection--------
 ML_hat = cell(3,1); % Εκτιμήσεις για κάθε περίπτωση καναλιού
