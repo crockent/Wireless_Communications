@@ -1,0 +1,72 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Post-graduate Student                       %
+%                Emmanouil Thomas Chatzakis                  %
+%                2021030061                                  %
+%                                                            %
+%               Wireless Communications                      %
+%                                                            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clear all;
+close all;
+clc;
+
+% Parameters
+N = 200; % Number of symbols
+K = 1000; % Number of Monte Carlo runs
+SNR_dB = 0:2:20; % SNR range in dB
+
+
+
+h1_all = (randn(K,1) + 1j*randn(K,1))/sqrt(2);
+h2_all = (randn(K,1) + 1j*randn(K,1))/sqrt(2);
+bits_all = randi([0 1], 2*N, K);
+symbols_all = zeros(N, K);
+for k = 1:K
+    symbols_all(:,k) = bits_to_4qam(bits_all(:,k));
+end
+
+BER_MRC = calculate_ber_4qam_mrc(N, K, SNR_dB, h1_all, h2_all, bits_all, symbols_all);
+BER_TB = calculate_ber_4qam_tb(N, K, SNR_dB, h1_all, h2_all, bits_all, symbols_all);
+BER_Alamouti = calculate_ber_4qam_Alamouti(N, K, SNR_dB, h1_all, h2_all, bits_all, symbols_all);
+
+% Plot the MRC results with theory
+figure;
+semilogy(SNR_dB, BER_MRC, 'bo-');
+hold on
+yscale log
+xlabel('SNR (dB)');
+ylabel('BER');
+grid on;
+title('BER vs SNR (4-QAM, MRC)');
+SNR_lin = 10.^(SNR_dB/10);
+m = sqrt( SNR_lin ./ (2 + SNR_lin) );
+BER_MRC_theory = ((1 - m)/2).^2 .* (2 + m);
+BER_MRC_highSNR = 3 ./ (4 * (SNR_lin.^2));
+semilogy(SNR_dB, BER_MRC_theory,  'k--','LineWidth',2);
+semilogy(SNR_dB, BER_MRC_highSNR, 'r','LineWidth',1.5);
+legend('Simulated MRC','Theoretical MRC','High-SNR approx', 'Location','southwest');
+
+% Plot comparison of MRC and Transmit Beamforming
+figure;
+semilogy(SNR_dB, BER_TB, 'bo-');
+hold on
+semilogy(SNR_dB, BER_MRC,  'k-','LineWidth',2);
+yscale log
+xlabel('SNR (dB)');
+ylabel('BER');
+grid on;
+title('MRC vs Transmit Beamforming ');
+legend('Simulated Transmit Beamforming','Simulated MRC');
+
+% Plot comparison of MRC, Transmit Beamforming, and Alamouti
+figure;
+semilogy(SNR_dB, BER_TB, 'bo-');
+hold on
+semilogy(SNR_dB, BER_MRC,  'k-','LineWidth',2);
+semilogy(SNR_dB, BER_Alamouti,  'r--','LineWidth',2);
+yscale log
+xlabel('SNR (dB)');
+ylabel('BER');
+grid on;
+title('MRC vs Transmit Beamforming vs Alamouti ');
+legend('Simulated Transmit Beamforming','Simulated MRC','Simulated Alamouti');
