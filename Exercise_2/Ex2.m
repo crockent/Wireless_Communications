@@ -70,3 +70,14 @@ ylabel('BER');
 grid on;
 title('MRC vs Transmit Beamforming vs Alamouti ');
 legend('Simulated Transmit Beamforming','Simulated MRC','Simulated Alamouti');
+
+
+%% PART 2
+[BER_SM_ML, BER_SM_ZF] = calculate_ber_4qam_SM_ML_ZF(N, K, SNR_dB);
+figure;
+semilogy(SNR_dB, BER_SM_ML,'bo-'); hold on;
+semilogy(SNR_dB, BER_SM_ZF,'r*-');
+yscale log
+grid on; xlabel('SNR (dB)'); ylabel('BER');
+title('2x2 Spatial Multiplexing 4-QAM: ML vs Decorrelator');
+legend('ML detector','ZF decorrelator','Location','southwest');
