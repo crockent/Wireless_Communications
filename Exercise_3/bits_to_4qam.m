@@ -14,3 +14,5 @@ function symbols = bits_to_4qam(bits)
     % Form complex symbols
     symbols = real_part + 1j*imag_part;
 end
+
+
